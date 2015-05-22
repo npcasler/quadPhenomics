@@ -1,5 +1,4 @@
-## Load a file
-
+# This script will attempt to apply a quadtree based intersection on a list of points.
 try:
     from osgeo import ogr, osr, gdal
 except:
@@ -22,26 +21,10 @@ def gdal_error_handler(err_class, err_num, err_msg):
 
 try:
     import csv, pyqtree
-    from shapely.geometry import Point, Polygon
 except: 
     sys.exit('Error: cannot find dependent libraries')
 
-if __name__ == '__main__':
-    # install error handler
-    gdal.PushErrorHandler(gdal_error_handler)
-
-
-
 ogr.UseExceptions()
-
-#xMin = -131.35
-#yMin = 38
-#xMax = 10.1687
-#yMax = 56
-
-
-#overlapBbox = (-129,44,-118,48.31)
-
 wgs = osr.SpatialReference()
 wgs.ImportFromEPSG(4326)
 
@@ -50,31 +33,49 @@ wgs.ImportFromEPSG(4326)
 utm = osr.SpatialReference()
 utm.ImportFromEPSG(32612)
 
-transform = osr.CoordinateTransformation(wgs, utm)
-
-yMin = 9999
-yMax = 0
-xMin = 9999 
-xMax = 0
+yMin = 3.40282e+38
+yMax = 1.17549e-38
+xMin = 3.40282e+38
+xMax = 1.17549e-38
 with open('plotnodes.csv', 'rb') as p:
     reader = csv.DictReader(p)
     plots = []
     for row in reader:
-        plot = []
+        # Create empty polygon geometry for plot
+        plot = ogr.Geometry(ogr.wkbPolygon)
+        # Create linear ring to add coordinates to
+        ring = ogr.Geometry(ogr.wkbLinearRing)
+        print len(row)
         for x in range(1,5):
             print x
+            
             cLon = float(row['X'+`x`])
-            if cLon > xMax
-                xMax = cLon
-            else if cLon < xMin
-                xMin = cLon
+            if (cLon < xMin): 
+              xMin = cLon
+            elif (cLon > xMax):
+              xMax = cLon
             cLat = float(row['Y'+`x`])
+            if (cLat < yMin):
+              yMin = cLat
+            elif (cLat > yMax):
+              yMax = cLat
             coord = (cLon,cLat)
-            print(coord)
-            plot.append(coord)
-        plotPoly = Polygon(plot)
-        plots.append(plotPoly)
-    print plots[5]
+            ring.AddPoint(cLon,cLat)
+        plot.AddGeometry(ring)
+        #Add plot to list
+        plots.append(plot)
+        print plot.GetArea()
+    print len(plots)
+    print "Min = (%f , %f) Max = (%f, %f)" % (xMin, yMin, xMax, yMax)
+
+#create a quad tree based on plot bounds
+
+#xMin = -131.35
+#yMin = 38
+#xMax = 10.1687
+#yMax = 56
+
+spindex = pyqtree.Index(bbox=[xMin,yMin,xMax,yMax])
 
 src  =  open('f119_2012_doy201_1pm_cc.csv', 'rb')
 tmp = open('cc_tmp.csv', 'wb')
@@ -88,39 +89,28 @@ src.close()
 tmp.close()
 
 
-spindex = pyqtree.Index(bbox=[xMin,yMin,xMax,yMax])
-
-
+transform = osr.CoordinateTransformation(wgs, utm)
 pointDataSource = ogr.Open("cc.vrt")
 print pointDataSource.__len__()
 lyr = pointDataSource.GetLayer(0)
 #print lyr
+i = 0
 for feat in lyr:
-    geom = feat.GetGeometryRef()
-    geom.Transform(transform)
-    print feat
-    #print geom.ExportToWkt()
+    if (i < 10):
+        geom = feat.GetGeometryRef()
+        geom.Transform(transform)
+        print "Feature id: %d" % feat.GetFID()
+        print geom.ExportToWkt()
      
-'''
-with open('f119_2012_doy201_1pm_cc.csv', 'rb') as f:
-    reader = csv.DictReader(f)
-    for row in reader:
-        print row['LONGITUDE']
-        xLon = row['LONGITUDE']
-        xLat = row['LATITUDE']
-        # Check for null coordinates
-        if bool(xLon.strip()) and bool(xLat.strip()):
-
-            point = Point(float(xLon), float(xLat))
-            geom = ogr.CreateGeometryFromWkb(point.wkb)
-            geom.Transform(transform)
-            print geom.GetEnvelope
-            spindex.insert(item=geom, bbox=geom.GetEnvelope())
-        else: 
-            print "Coordinates missing"
+        #print feat.__getitem__('SENSOR')
+        spindex.insert(item=geom, bbox=geom.GetEnvelope())
+        i = i + 1
     
-    matches = spindex.intersect(overlapBbox)
-    for i in plots:
-        plotMatches = spindex.intersect(i.bounds)
-        print `i` + `len(plotMatches)`
-   ''' 
+print "Total points is: %d "  % spindex.countmembers()
+
+#print spindex.bbox
+for i in plots:
+  print i.GetEnvelope()
+
+  plotMatches = spindex.intersect(i.GetEnvelope())
+  print `len(plotMatches)`
