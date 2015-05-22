@@ -96,7 +96,7 @@ lyr = pointDataSource.GetLayer(0)
 #print lyr
 i = 0
 for feat in lyr:
-    if (i < 10):
+    if (i < 100):
         geom = feat.GetGeometryRef()
         geom.Transform(transform)
         print "Feature id: %d" % feat.GetFID()
@@ -109,8 +109,8 @@ for feat in lyr:
 print "Total points is: %d "  % spindex.countmembers()
 
 #print spindex.bbox
-for i in plots:
-  print i.GetEnvelope()
+#for i in plots:
+  #print i.GetEnvelope()
 
-  plotMatches = spindex.intersect(i.GetEnvelope())
-  print `len(plotMatches)`
+  #plotMatches = spindex.intersect(i.GetEnvelope())
+  #print `len(plotMatches)`
