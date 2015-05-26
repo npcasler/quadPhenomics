@@ -157,8 +157,8 @@ for feat in lyr:
 Use the set_mask() method and pass a list of x-y coordinates to filter the iteration process
 and apply the function only on elements inside a given polygon. The polygon will be automatically closed.
 '''
-print plots[0].GetGeometryRef(0).GetPoints()
-testPlot = plots[0].GetGeometryRef(0).GetPoints()
+print plots[0].GetGeometryRef(0).GetPoints(1)
+testPlot = plots[0].GetGeometryRef(0).GetPoints(1)
 
 q.set_mask(testPlot)
 q.iterate(print_callback)
@@ -190,17 +190,17 @@ from matplotlib import pyplot as plt
 
 @static_elt
 def plot_green(p):
-    plt.plot([p.get_x(),p.get_y()], 'o', color='lightgrey')
+    plt.plot([p[0],p[1]], 'o', color='lightgrey')
 
 @static_elt
 def plot_red(p):
-    plt.plot([p.get_x(), p.get_y()], 'ro')
+    plt.plot([p[0], p[1]], 'ro')
 
 fig = plt.figure()
 plt.axis([xMin,xMax,yMin,yMax])
 q.set_mask(None)
 q.iterate(plot_green)
-q.set_mask(testPlot.getPoints())
+q.set_mask(testPlot)
 q.iterate(plot_red)
 _ = plt.plot([-3, -3, 3, 3, -3], [-7,7,7,-7,-7], 'r')
 
