@@ -126,14 +126,13 @@ transform = osr.CoordinateTransformation(wgs, utm)
 pointDataSource = ogr.Open("cc.vrt")
 lyr = pointDataSource.GetLayer(0)
 
-i = 0;
+#i = 0;
 for feat in lyr:
     geom = feat.GetGeometryRef()
     geom.Transform(transform)
     print "Feature id: %d" % feat.GetFID()
-    if (i < 100):
-        q.insert([geom.GetX(),geom.GetY()])
-        i = i + 1
+    q.insert([geom.GetX(),geom.GetY()])
+ #       i = i + 1
 print "Points projected..."
 
 
@@ -190,18 +189,18 @@ from matplotlib import pyplot as plt
 
 @static_elt
 def plot_green(p):
-    plt.plot([p[0],p[1]], 'o', color='lightgrey')
+    plt.scatter(p[0],p[1], c='b', marker='o')
 
 @static_elt
 def plot_red(p):
-    plt.plot([p[0], p[1]], 'ro')
+ plt.scatter(p[0],p[1], c='g', marker='o')
 
 fig = plt.figure()
-plt.axis([xMin,xMax,yMin,yMax])
+#plt.axis([xMin,xMax,yMin,yMax])
 q.set_mask(None)
-q.iterate(plot_green)
-q.set_mask(testPlot)
+#q.iterate(plot_green)
+#q.set_mask(testPlot)
 q.iterate(plot_red)
-_ = plt.plot([-3, -3, 3, 3, -3], [-7,7,7,-7,-7], 'r')
+#_ = plt.plot([-3, -3, 3, 3, -3], [-7,7,7,-7,-7], 'r')
 
-fig.show()
+plt.show()
