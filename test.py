@@ -1,4 +1,5 @@
 # This script will attempt to apply a quadtree based intersection on a list of points.
+import sys
 try:
     from osgeo import ogr, osr, gdal
 except:
@@ -7,6 +8,10 @@ try:
     import csv
 except: 
     sys.exit('ERROR: cannot find CSV modules')
+try:
+    import parse
+except:
+    sys.exit('ERROR: cannot find parse module')
 try: 
     from objects import BasePoint, Plot
 except: 
@@ -25,11 +30,6 @@ any element may have changed, or with `@static_elt` otherwise. The decorator is 
 so that the quadtree structure is updated accordingly
 '''
 from smartquadtree import static_elt
-@static_elt
-def print_callback(p):
-    print p.__repr__()
-    #print "[%.2f, %.2f] " % (p[0], p[1])
-#q.iterate(print_callback)
 
 ogr.UseExceptions()
 wgs = osr.SpatialReference()
@@ -40,50 +40,17 @@ wgs.ImportFromEPSG(4326)
 utm = osr.SpatialReference()
 utm.ImportFromEPSG(32612)
 
-yMin = 3.40282e+38
-yMax = 1.17549e-38
-xMin = 3.40282e+38
-xMax = 1.17549e-38
-def createPlots(filename):
 
+plotInfo = parse.createPlots('plotnodes.csv')
+#print plotInfo
+width = plotInfo['xMax'] - plotInfo['xMin']
+print "WIDTH = %f" % width
+height = plotInfo['yMax'] - plotInfo['yMin']
+print "HEIGHT = %f" % height
+centroid = BasePoint(plotInfo['xMin'] + width/2,plotInfo['yMin'] + height/2)
+print "Centroid = %f , %f" % (centroid.get_x(), centroid.get_y())
 
-    yMin = 3.40282e+38
-    yMax = 1.17549e-38
-    xMin = 3.40282e+38
-    xMax = 1.17549e-38
-    with open(str(filename), 'rb') as p:
-        reader = csv.DictReader(p)
-        plots = []
-        for row in reader:
-            # Create empty polygon geometry for plot
-            plot = Plot(row['BARCODE']) 
-            # Create linear ring to add coordinates to
-            ring = ogr.Geometry(ogr.wkbLinearRing)
-            print len(row)
-            for x in range(1,5):
-                #print x
-                
-                cLon = float(row['X'+`x`])
-                if (cLon < xMin): 
-                  xMin = cLon
-                elif (cLon > xMax):
-                  xMax = cLon
-                cLat = float(row['Y'+`x`])
-                if (cLat < yMin):
-                  yMin = cLat
-                elif (cLat > yMax):
-                  yMax = cLat
-                coord = (cLon,cLat)
-                ring.AddPoint(cLon,cLat)
-
-            plot.geom.AddGeometry(ring)
-            #Add plot to list
-            plots.append(plot)
-            print plot.geom.GetArea()
-        print len(plots)
-        print "Min = (%f , %f) Max = (%f, %f)" % (xMin, yMin, xMax, yMax)
-    return plots
-
+plots = plotInfo['plots']
 
 def writePlotShapefile(plots):
     #set up the shapefile driver
@@ -92,95 +59,74 @@ def writePlotShapefile(plots):
     # create the data source
     data_source = driver.CreateDataSource("plots.shp")
 
+@static_elt
+def print_points(p):
+    print "HELLO"
+    print "[%f, %f]" % p.get_x(), p.get_y()
 
 '''
 initiate Quadtree
 '''
-plots = createPlots('plotnodes.csv')
-q = Quadtree(xMin,yMin,xMax,yMax)
-'''
-Remove any empty rows or rows missing coordinates
-'''
-src  =  open('f119_2012_doy201_1pm_cc.csv', 'rb')
-tmp = open('cc_tmp.csv', 'wb')
-writer = csv.writer(tmp)
-for row in csv.reader(src):
-    # Remove rows where all fields are empty
-    if any(field.strip() for field in row):
-       
-        writer.writerow(row)
-src.close()
-tmp.close()
+q = Quadtree(centroid.get_x(),centroid.get_y(),width,height)
+q.set_limitation(1)
 
-'''
-Transform coodinates to UTM so they can be 
-compared with the plot coordinates
-'''
-transform = osr.CoordinateTransformation(wgs, utm)
-pointDataSource = ogr.Open("cc.vrt")
-lyr = pointDataSource.GetLayer(0)
-
-#i = 0;
-for feat in lyr:
-    geom = feat.GetGeometryRef()
-    geom.Transform(transform)
-    point = BasePoint(geom.GetX(), geom.GetY())
-
-    print "Feature id: %d" % feat.GetFID()
-    q.insert(point)
- #       i = i + 1
-print "Points projected..."
-
+parse.cleanCSV('f119_2012_doy201_1pm_cc.csv', 'cc_tmp.csv')
 
 '''
 Add points into quadtree
+'''
 
+
+'''Comment out for benchmarking 
+pointDataSource = ogr.Open('cc.vrt')
+lyr = pointDataSource.GetLayer(0)
+
+print "Adding points to Quadtree"
+for feat in lyr:
+    point = parse.projectPoint(feat)
+    q.insert(point)
+
+print "Points projected..."
+for plot in plots:
+    q.set_mask(plot.get_points())
+    print "%d elements (don't ignore the mask)" % q.size(False)
+    q.set_mask(None)
+
+'''
+
+pointDataSource = ogr.Open('cc-proj.vrt')
+lyr = pointDataSource.GetLayer(0)
+'''
+TESTING SIMPLE INTERSECT
+'''
+'''
+print "Filtering features"
+for plot in plots:
+    lyr.SetSpatialFilter(plot.geom)
+    count = 0
+    for feature in lyr:
+        count = count + 1
+        print count
+'''
+'''
+TESTING QUADTREE INTERSECT
+'''
 for feat in lyr:
     geom = feat.GetGeometryRef()
-    if (i < 100):
-        #geom = feat.GetGeometryRef()
+    point = BasePoint(geom.GetX(), geom.GetY())
+    q.insert(point)
+  
+for plot in plots:
+    q.set_mask(plot.get_points())
+    #print "%d elements (don't ignore the mask)" % q.size(False)
+    q.set_mask(None)
 
-    #    geom = feat.GetGeometryRef()
-        #q.insert([geom.GetX(),geom.GetY()],feat.GetFID())
-        print i
-        i = i + 1
-'''        
+
+
+'''
 #q.iterate(print_callback)
 
 
-''' 
 Use the set_mask() method and pass a list of x-y coordinates to filter the iteration process
 and apply the function only on elements inside a given polygon. The polygon will be automatically closed.
-'''
-print plots[0].get_barcode()
-print plots[0].geom
-testPlot = plots[0].get_points()
-
-q.set_mask(testPlot)
-q.iterate(get_geom())
-
-'''
-#q.iterate(print_callback)
-
-count = 0
-@static_elt
-def count_element(p):
-    global count
-    count += 1
-q.iterate(count_element)
-print ("%d elements" % count)
-'''
-'''
-Since a mask is set on the quadtree we only counted the elements inside the mask. You can use
-the size() method to count elements and ignore the mask by default. Disabling the mask with set_mask(None)
-is also a possibility.
-'''
-'''
-print "%d elements (size methods)" % q.size()
-print "%d elements (don't ignore the mask)" % q.size(False)
-
-count = 0
-q.set_mask(None)
-q.iterate(count_element)
-print "%d elements (disable the mask)" % count
 '''

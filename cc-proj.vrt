@@ -1,0 +1,11 @@
+<OGRVRTDataSource>
+  <OGRVRTWarpedLayer>
+    <OGRVRTLayer name="cc_tmp">
+        <SrcDataSource>cc_tmp.csv</SrcDataSource>
+        <GeometryType>wkbPoint</GeometryType>
+        <LayerSRS>WGS84</LayerSRS>
+        <GeometryField encoding="PointFromColumns" x="LONGITUDE" y="LATITUDE"/>
+    </OGRVRTLayer>
+    <TargetSRS>EPSG:32612</TargetSRS>
+  </OGRVRTWarpedLayer>
+</OGRVRTDataSource>

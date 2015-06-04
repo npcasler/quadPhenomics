@@ -1,0 +1,25 @@
+digraph G {
+    Log [shape=box]; /* this is a comment */
+    Log -> georeference [weight=8];
+    georeference [label="Generate Receiver Points"];
+    georeference -> project;
+    project [label="Project Receiver Points"];
+
+
+    Log -> parse;
+    parse [label="Parse Sensor Data"];
+    parse -> create;
+    create [shape=box];
+    create [label="Create sensor points"];
+    project -> create;
+    
+    Survey [shape=box];
+    Survey -> plots;
+    plots [label="Generate plot geometries"];
+    plots -> intersect;
+    intersect [shape=box];
+    intersect [label="Intersect Sensor Points with Plots"];
+    create -> intersect;
+    
+    
+}

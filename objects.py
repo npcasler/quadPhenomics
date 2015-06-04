@@ -60,28 +60,7 @@ class Plot(object):
         #return self.geom.GetBoundary()
     
     def get_points(self):
-        self.geom.CloseRings()
         print self.geom.GetPointCount()
-        return self.geom.GetPoints()
+        ## Return the cooordinates from the external ring(boundary) using only 2d coordinates
+        return self.geom.GetBoundary().GetPoints(2)
 
-## Initiate the projections
-wgs = osr.SpatialReference()
-wgs.ImportFromEPSG(4326)
-
-## Initiate the UTM projection
-utm = osr.SpatialReference()
-utm.ImportFromEPSG(32612)
-
-testX = 409117.50416
-testY = 3659517.08689
-heading = 268.70999
-offX = -1.524
-offY = 0.130175
-
-p = BasePoint(testX,testY)
-
-print p.get_x()
-print p.get_y()
-print p.get_geom()
-p.OffsetGeom(offX, offY, heading)
-print p.get_geom()
