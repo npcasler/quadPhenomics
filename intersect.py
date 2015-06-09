@@ -108,9 +108,3 @@ for feat in lyr:
     
 print "Total points is: %d "  % spindex.countmembers()
 
-#print spindex.bbox
-#for i in plots:
-  #print i.GetEnvelope()
-
-  #plotMatches = spindex.intersect(i.GetEnvelope())
-  #print `len(plotMatches)`
