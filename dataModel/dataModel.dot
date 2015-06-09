@@ -1,0 +1,57 @@
+digraph G {
+    node [shape=plaintext]
+    center=true;
+    label="Data Model\n\n\n";
+    labelloc="t";
+    fontsize=40;
+    nodesep=1;
+    splines=false;
+    {rank=same c b d }
+//    {rank=same c b }
+//    {rank=same c b e}    
+
+    a [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="8">
+                           <TR><TD PORT="c" BGCOLOR="gray">Receiver log</TD></TR>
+              </TABLE>>];
+
+    b [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="8">
+                           <TR><TD PORT="c" BGCOLOR="gray">Vehicle</TD></TR>
+                           <TR><TD PORT="d">ID</TD></TR>
+                           <TR><TD PORT="e">Timestamp</TD></TR>
+                           <TR><TD PORT="f">Heading</TD></TR>
+                           <TR><TD PORT="g">Elevation</TD></TR>
+              </TABLE>>];
+
+
+    c [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="8">
+                           <TR><TD PORT="c" BGCOLOR="gray">Sensor</TD></TR>
+                           <TR><TD PORT="d">ID</TD></TR>
+                           <TR><TD PORT="e">Data1</TD></TR>
+                           <TR><TD PORT="f">Data2</TD></TR>
+                           <TR><TD PORT="g">Data3</TD></TR>
+                           <TR><TD PORT="h">VehicleID</TD></TR>
+                           <TR><TD PORT="i">PlotID</TD></TR>
+              </TABLE>>];
+
+    d [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="8">
+                           <TR><TD PORT="c" BGCOLOR="gray">Plot survey</TD></TR>
+              </TABLE>>];
+
+    e [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="8">
+                           <TR><TD PORT="c" BGCOLOR="gray">Plot</TD></TR>
+                           <TR><TD PORT="d">ID (barcode)</TD></TR>
+              </TABLE>>];
+
+    f [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="8">
+                           <TR><TD PORT="c" BGCOLOR="gray">Run metadata</TD></TR>
+              </TABLE>>];
+
+    a:c -> c:c;
+    a:c -> b:c;
+    b:d -> c:h [label="one-to-many",style=dashed];
+    e:d -> c:i [label="\n"];
+    f:c -> c:c;
+    f:c -> b:c;
+    d:c -> e:c;
+
+}
