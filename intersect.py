@@ -70,10 +70,6 @@ with open('plotnodes.csv', 'rb') as p:
 
 #create a quad tree based on plot bounds
 
-#xMin = -131.35
-#yMin = 38
-#xMax = 10.1687
-#yMax = 56
 
 spindex = pyqtree.Index(bbox=[xMin,yMin,xMax,yMax])
 
