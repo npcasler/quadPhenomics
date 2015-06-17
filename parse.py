@@ -15,7 +15,6 @@ except:
     sys.exit('ERROR: cannot find object definitions')
 
 
-
 '''
 Remove any empty rows or rows missing coordinates
 

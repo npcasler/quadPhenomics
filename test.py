@@ -57,7 +57,35 @@ def writePlotShapefile(plots):
     driver = ogr.GetDriverByName("ESRI Shapefile")
 
     # create the data source
+
     data_source = driver.CreateDataSource("plots.shp")
+
+    # create spatial reference
+    srs = utm
+
+    # Create the layer
+    layer = data_source.CreateLayer("plots", srs, ogr.wkbPolygon)
+
+    # Add the fields we're interested in
+    field_barcode = ogr.FieldDefn("Barcode", ogr.OFTString)
+    field_barcode.SetWidth(24)
+    layer.CreateField(field_barcode)
+
+    for plot in plots:
+        # create the feature
+        feature = ogr.Feature(layer.GetLayerDefn())
+        # set the feature attributes
+        feature.SetField("Barcode", plot.barcode)
+        print "Plot barcode: %s" % plot.barcode
+        print "Geometry: %s" % plot.GetGeometry()
+        # set the feature geometry
+        feature.SetGeometry(plot.GetGeometry())
+        #create the feature in the layer(shapefile)
+        layer.CreateFeature(feature)
+        # Destroy the feature to free resources
+        feature.Destroy()
+    # Destroy the data source to free resources
+    data_source.Destroy()
 
 @static_elt
 def print_points(p):
@@ -111,6 +139,10 @@ for plot in plots:
 '''
 TESTING QUADTREE INTERSECT
 '''
+
+writePlotShapefile(plots)
+
+
 for feat in lyr:
     geom = feat.GetGeometryRef()
     point = BasePoint(geom.GetX(), geom.GetY())
