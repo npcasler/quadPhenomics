@@ -1,3 +1,5 @@
+import sys
+
 try:
     from osgeo import ogr, osr, gdal
 except:
@@ -92,17 +94,17 @@ class InfraTherm(object):
 
 
 class Plot(object):
-    def __init__(self,barcode):
-        self.barcode = barcode
+    def __init__(self,plot_id):
+        self.plot_id = plot_id
         self.geom = ogr.Geometry(ogr.wkbPolygon)
 
     
-    def get_barcode(self):
-        return self.barcode
+    def get_plot_id(self):
+        return self.plot_id
     
     def get_geom(self):
-        return self.geom.GetGeometryName()
-        #return self.geom.GetBoundary()
+        #return self.geom.GetGeometryName()
+        return self.geom
     
     def get_points(self):
         print self.geom.GetPointCount()

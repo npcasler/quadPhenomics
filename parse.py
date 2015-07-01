@@ -14,6 +14,15 @@ try:
 except:
     sys.exit('ERROR: cannot find object definitions')
 
+try: 
+    from datetime import datetime
+except: 
+    sys.exit('ERROR: cannot load date/time modules')
+
+try:
+    import calendar
+except:
+    sys.exit('ERROR: trouble loading calendar module')
 
 '''
 Remove any empty rows or rows missing coordinates
@@ -73,6 +82,54 @@ def projectPoint(feature):
     point = BasePoint(geom.GetX(), geom.GetY())
     return point
 
+# param shapefile: path to shapefile to open
+def readShape(shapefile):
+    
+    driver = ogr.GetDriverByName('ESRI Shapefile')
+    dataSource = driver.Open(shapefile, 0) # 0 signifies read-only, 1 is writeable
+    print dataSource
+    # Check if shapefile is found
+    if dataSource is None:
+        print 'Could not open %s' % (shapefile)
+    else:
+        print 'Opened %s' % shapefile
+        layer = dataSource.GetLayer(0)
+        layerDefinition = layer.GetLayerDefn()
+        extent = layer.GetExtent()
+        print extent
+        
+
+    dataSource.Destroy()
+
+def getExtentFromShape(shapefile):
+    
+    driver = ogr.GetDriverByName('ESRI Shapefile')
+    dataSource = driver.Open(shapefile, 0) # 0 signifies read-only, 1 is writeable
+    print dataSource
+    # Check if shapefile is found
+    if dataSource is None:
+        print 'Could not open %s' % (shapefile)
+    else:
+        print 'Opened %s' % shapefile
+        layer = dataSource.GetLayer(0)
+        layerDefinition = layer.GetLayerDefn()
+        extent = layer.GetExtent()
+        return extent
+        
+
+    dataSource.Destroy()
+
+
+def getCentroidExtent(shapefile):
+    extent = getExtentFromShape(shapefile)
+    width = extent[1] - extent[0]
+    height = extent[3] - extent[2]
+    centroidX = extent[0] + width/2
+    centroidY = extent[2] + height/2
+    centroid = BasePoint(centroidX,centroidY)
+    centroidExtent = [centroid, width, height]
+    return centroidExtent
+
 
 def createPlots(filename):
 
@@ -115,4 +172,15 @@ def createPlots(filename):
         print "Min = (%f , %f) Max = (%f, %f)" % (xMin, yMin, xMax, yMax)
         plotInfo = {'plots': plots, 'xMin': xMin, 'yMin': yMin, 'xMax': xMax, 'yMax': yMax}
     return plotInfo
+
+
+def iso8601_to_epoch(datestring):
+    """ 
+    This function copied from https://gist.github.com/squioc/3078803
+    iso8601_to_epoch - convert the iso8601 date into the unix epoch time
+
+    > iso8601_to_epoch("2012-07-09T22:27:50.272517")
+    1341872870
+    """
+    return calendar.timegm(datetime.strptime(datestring, "%Y-%m-%dT%H:%M:%S.%f").timetuple())
 

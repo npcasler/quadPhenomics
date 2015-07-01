@@ -1,5 +1,5 @@
 # This script will attempt to apply a quadtree based intersection on a list of points.
-import sys
+import os, sys
 try:
     from osgeo import ogr, osr, gdal
 except:
@@ -41,23 +41,26 @@ utm = osr.SpatialReference()
 utm.ImportFromEPSG(32612)
 
 
-plotInfo = parse.createPlots('plotnodes.csv')
+#plotInfo = parse.createPlots('plotnodes.csv')
 #print plotInfo
-width = plotInfo['xMax'] - plotInfo['xMin']
-print "WIDTH = %f" % width
-height = plotInfo['yMax'] - plotInfo['yMin']
-print "HEIGHT = %f" % height
-centroid = BasePoint(plotInfo['xMin'] + width/2,plotInfo['yMin'] + height/2)
-print "Centroid = %f , %f" % (centroid.get_x(), centroid.get_y())
+#width = plotInfo['xMax'] - plotInfo['xMin']
+#print "WIDTH = %f" % width
+#height = plotInfo['yMax'] - plotInfo['yMin']
+#print "HEIGHT = %f" % height
+#centroid = BasePoint(plotInfo['xMin'] + width/2,plotInfo['yMin'] + height/2)
+#print "Centroid = %f , %f" % (centroid.get_x(), centroid.get_y())
 
-plots = plotInfo['plots']
+plots = parse.readShape("plots.shp")
+extent = parse.getExtentFromShape("plots.shp")
+#plots = plotInfo['plots']
 
 def writePlotShapefile(plots):
     #set up the shapefile driver
     driver = ogr.GetDriverByName("ESRI Shapefile")
 
     # create the data source
-
+    if os.path.exists('plots.shp'):
+        driver.DeleteDataSource('plots.shp')
     data_source = driver.CreateDataSource("plots.shp")
 
     # create spatial reference
@@ -67,19 +70,19 @@ def writePlotShapefile(plots):
     layer = data_source.CreateLayer("plots", srs, ogr.wkbPolygon)
 
     # Add the fields we're interested in
-    field_barcode = ogr.FieldDefn("Barcode", ogr.OFTString)
-    field_barcode.SetWidth(24)
-    layer.CreateField(field_barcode)
+    field_plot_id = ogr.FieldDefn("plot_id", ogr.OFTString)
+    field_plot_id.SetWidth(24)
+    layer.CreateField(field_plot_id)
 
     for plot in plots:
         # create the feature
         feature = ogr.Feature(layer.GetLayerDefn())
         # set the feature attributes
-        feature.SetField("Barcode", plot.barcode)
-        print "Plot barcode: %s" % plot.barcode
-        print "Geometry: %s" % plot.GetGeometry()
+        feature.SetField("plot_id", plot.plot_id)
+        print "Plot barcode: %s" % plot.plot_id
+        print "Geometry: %s" % plot.get_geom()
         # set the feature geometry
-        feature.SetGeometry(plot.GetGeometry())
+        feature.SetGeometry(plot.get_geom())
         #create the feature in the layer(shapefile)
         layer.CreateFeature(feature)
         # Destroy the feature to free resources
