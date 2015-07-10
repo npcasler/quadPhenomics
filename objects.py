@@ -20,9 +20,12 @@ except:
     sys.exit('ERROR: cannot find Quadtree module')
 
 class BasePoint(object):
-    def __init__(self, x, y, z=None):
+    def __init__(self, pointId, x, y, z=None):
         #self.x = x
         #self.y = y
+        if pointId is None:
+          pointId = 9999
+        self.pointId = pointId
         if z is None:
           z = 0
         ## Initialize OGR geometry from input coords
@@ -41,6 +44,9 @@ class BasePoint(object):
         yp = offX * math.sin(-1 * headingRad) + offY * math.cos(-1 * headingRad)
         zp = offZ + z
         self.geom.AddPoint(x + xp, y + yp, zp)
+
+    def get_id(self):
+        return self.pointId
 
     def get_x(self): 
         return self.geom.GetX()

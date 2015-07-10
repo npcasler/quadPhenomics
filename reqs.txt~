@@ -1,6 +1,0 @@
-Required for python:
-
-sudo apt-get install python-pip
-sudo apt-get install python-gdal
-git clone https://github.com/xoolive/quadtree.git
-

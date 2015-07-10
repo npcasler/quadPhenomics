@@ -1,0 +1,13 @@
+Unique Id for the sensor data
+
+Timestamps standard format (Unix Epoch)
+
+Cut off garbage values
+
+Remove nulls
+
+Get projection data from the shapefile UTM zone12n
+
+Send a report back to Maricopa on outputs
+
+

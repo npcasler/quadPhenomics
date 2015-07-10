@@ -1,0 +1,18 @@
+Quadtree Return Problem:
+
+Sqlite: 
+	if done for each row, performance suffers greatly
+
+Context Manager:
+	returns null when piped to a file
+		-> will need to write a parser
+			-> otherwise it is read as a string
+			-> liststream separates every element including brackets
+
+Alter Quadtree implementation:
+	returning object -> Need a new function implementation
+		-> will eventually need to be inserted into sqlite
+	to Sqlite -> will need to hardcode and may be more work than help
+		-> cuts to the chase
+
+

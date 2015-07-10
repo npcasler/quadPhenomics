@@ -1,4 +1,4 @@
-import sys
+import os, sys
 
 try: 
     import csv
@@ -14,15 +14,26 @@ try:
 except:
     sys.exit('ERROR: cannot find object definitions')
 
+try:
+    from smartquadtree import Quadtree, static_elt
+except:
+    sys.exit('ERROR: cannot find quadtree modules')
+
 try: 
     from datetime import datetime
 except: 
     sys.exit('ERROR: cannot load date/time modules')
 
+
 try:
     import calendar
 except:
     sys.exit('ERROR: trouble loading calendar module')
+
+try: 
+    import sqlite3
+except: 
+    sys.exit('ERROR: could not load sqlite module')
 
 '''
 Remove any empty rows or rows missing coordinates
@@ -79,7 +90,7 @@ def projectPoint(feature):
 
     geom = feature.GetGeometryRef()
     geom.Transform(transform)
-    point = BasePoint(geom.GetX(), geom.GetY())
+    point = BasePoint(feature.GetFID(), geom.GetX(), geom.GetY())
     return point
 
 # param shapefile: path to shapefile to open
@@ -94,12 +105,108 @@ def readShape(shapefile):
     else:
         print 'Opened %s' % shapefile
         layer = dataSource.GetLayer(0)
+        print "Layer has %d features" % layer.GetFeatureCount()
         layerDefinition = layer.GetLayerDefn()
         extent = layer.GetExtent()
         print extent
-        
+        shape = layer    
 
     dataSource.Destroy()
+    return shape
+
+def create_table():
+    conn = sqlite3.connect('test.db')
+    c = conn.cursor()
+    c.execute("CREATE TABLE IF NOT EXISTS sensor(id integer, x float, y float, plot_id text)")
+    conn.commit()
+    conn.close()
+
+def checkPoints(q, plot_id):
+    global pointList
+     
+    pointList = []
+    @static_elt
+    def print_point(p):
+        global pointList
+        
+        #if p.get_id() is None:
+        #    return
+        pointInfo = (p.get_id(), p.get_x(), p.get_y(), plot_id)
+        pointList.append(pointInfo)
+    q.iterate(print_point)
+    print pointList
+    return pointList
+
+
+
+def insertPoints(pointList):
+    conn = sqlite3.connect('test.db')
+    c = conn.cursor()
+    c.executemany("INSERT INTO sensor(id,x,y,plot_id) VALUES (?, ?, ?, ?)", pointList)
+    conn.commit()
+    conn.close()
+
+def outputPoints(outFile):
+    if outFile == "" or outFile is None:
+        sys.exit("ERROR: No output file specified")
+    conn = sqlite3.connect('test.db')
+    c = conn.cursor()
+    p = c.execute("SELECT * FROM sensor")
+    with open(outFile, "wb") as csv_file:
+        csv_writer = csv.writer(csv_file)
+        # Write headers
+        csv_writer.writerow([i[0] for i in c.description])
+        # Write data
+        csv_writer.writerows(c)
+    
+
+def select_points():
+    conn = sqlite3.connect('test.db')
+    c = conn.cursor()
+    p = c.execute("SELECT * FROM sensor")
+    conn.commit()
+    print p
+    conn.close()
+
+def clear_table(table):
+    conn = sqlite3.connect('test.db')
+    c = conn.cursor()
+    c.execute("DELETE FROM sensor")
+    #p = c.execute("DELETE FROM ?", (table))
+    conn.commit()
+    conn.close()
+
+def setQtreeMask(maskShapefile, quadtree):
+    driver =  ogr.GetDriverByName('ESRI Shapefile')
+    dataSource = driver.Open(maskShapefile, 0)
+    q = quadtree
+
+    if dataSource is None:
+        print 'Could not open %s' % (maskShapefile)
+    else: 
+        print 'Opened %s' % maskShapefile
+        layer = dataSource.GetLayer(0)
+        q.set_mask(None)
+        intersects = [];
+        for feature in layer:
+            plot_id = feature.GetField("plot_id")
+            intersect = []
+            
+            
+            geom = feature.GetGeometryRef().GetBoundary().GetPoints(2)
+            q.set_mask(geom)
+            print geom
+            print "%d elements (don't ignore the mask)" % q.size(False)
+            p = checkPoints(q, plot_id)
+            intersects.extend(p)
+            
+            q.set_mask(None)
+        print intersects
+        insertPoints(intersects)
+    dataSource.Destroy()
+
+
+
 
 def getExtentFromShape(shapefile):
     
@@ -126,7 +233,7 @@ def getCentroidExtent(shapefile):
     height = extent[3] - extent[2]
     centroidX = extent[0] + width/2
     centroidY = extent[2] + height/2
-    centroid = BasePoint(centroidX,centroidY)
+    centroid = BasePoint(9999, centroidX,centroidY)
     centroidExtent = [centroid, width, height]
     return centroidExtent
 
@@ -184,3 +291,48 @@ def iso8601_to_epoch(datestring):
     """
     return calendar.timegm(datetime.strptime(datestring, "%Y-%m-%dT%H:%M:%S.%f").timetuple())
 
+
+
+def writePlotShapefile(plots):
+    #set up the shapefile driver
+    driver = ogr.GetDriverByName("ESRI Shapefile")
+
+    wgs = osr.SpatialReference()
+    wgs.ImportFromEPSG(4326)
+
+    # This is the coordinate system used for the plot measurements
+    # This example uses UTM zone 12N, will need to parameterize this
+    utm = osr.SpatialReference()
+    utm.ImportFromEPSG(32612)
+    
+    # create the data source
+    if os.path.exists('plots.shp'):
+        driver.DeleteDataSource('plots.shp')
+    data_source = driver.CreateDataSource("plots.shp")
+
+    # create spatial reference
+    srs = utm
+
+    # Create the layer
+    layer = data_source.CreateLayer("plots", srs, ogr.wkbPolygon)
+
+    # Add the fields we're interested in
+    field_plot_id = ogr.FieldDefn("plot_id", ogr.OFTString)
+    field_plot_id.SetWidth(24)
+    layer.CreateField(field_plot_id)
+
+    for plot in plots:
+        # create the feature
+        feature = ogr.Feature(layer.GetLayerDefn())
+        # set the feature attributes
+        feature.SetField("plot_id", plot.plot_id)
+        print "Plot barcode: %s" % plot.plot_id
+        print "Geometry: %s" % plot.get_geom()
+        # set the feature geometry
+        feature.SetGeometry(plot.get_geom())
+        #create the feature in the layer(shapefile)
+        layer.CreateFeature(feature)
+        # Destroy the feature to free resources
+        feature.Destroy()
+    # Destroy the data source to free resources
+    data_source.Destroy()
