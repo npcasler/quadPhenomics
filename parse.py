@@ -121,6 +121,28 @@ def create_table():
     conn.commit()
     conn.close()
 
+def create_gnss_table():
+    conn = sqlite3.connect('test.db')
+    c = conn.cursor()
+    c.execute("CREATE TABLE IF NOT EXISTS gnss(id integer primary key autoincrement, tstamp float, long float, lat float, heading float, elev float)")
+    conn.commit()
+    conn.close()
+
+def create_cc_table():
+    conn = sqlite3.connect('test.db')
+    c = conn.cursor()
+    c.execute("CREATE TABLE IF NOT EXISTS crop_circle(id integer primary key autoincrement, sens_id text, tstamp float, c1 float, c2 float, c3 float, vi1 float, vi2 float)")
+    conn.commit()
+    conn.close()
+
+def get_closest_gnss(tstamp):
+    conn = sqlite3.connect('test.db')
+    c = conn.cursor()
+    p = c.execute("SELECT id, sens_id, tstamp, (SELECT TOP 1 id FROM gnss b WHERE b.tstamp < a.tstamp ORDER BY b.tstamp DESC) AS gid FROM crop_circle a")
+    print p
+    c.commit()
+    conn.close()
+
 def checkPoints(q, plot_id):
     global pointList
      
@@ -143,6 +165,16 @@ def insertPoints(pointList):
     conn = sqlite3.connect('test.db')
     c = conn.cursor()
     c.executemany("INSERT INTO sensor(id,x,y,plot_id) VALUES (?, ?, ?, ?)", pointList)
+    conn.commit()
+    conn.close()
+
+def insertGNSS(gnssLog):
+    conn = sqlite3.connect('test.db')
+    c = conn.cursor()
+    with open(gnssLog, 'rb') as gLog:
+        dr = csv.DictReader(gLog)
+        to_db = [(i['utc_tstamp'], i['latitude'],i['longitude'], i['heading'], i['elevation']) for i in dr]
+    c.executemany("INSERT INTO gnss(tstamp,lat,long,heading,elev) VALUES (?, ?, ?, ?, ?)", to_db)
     conn.commit()
     conn.close()
 
@@ -171,7 +203,8 @@ def select_points():
 def clear_table(table):
     conn = sqlite3.connect('test.db')
     c = conn.cursor()
-    c.execute("DELETE FROM sensor")
+    
+    c.execute("DELETE FROM "+  table)
     #p = c.execute("DELETE FROM ?", (table))
     conn.commit()
     conn.close()

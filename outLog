@@ -1,0 +1,15 @@
+['-i', 'docs/f119_2012_doy201_1pm_cc.csv', '-p', 'plots.shp', '-g', 'docs/GNSS_Data_2_formatted.csv', '-s', 'docs/CropCircle_Data_2_formatted.csv', '-o', 'outcsv.csv']
+Input File is  docs/f119_2012_doy201_1pm_cc.csv
+GNSS Log is  docs/GNSS_Data_2_formatted.csv
+Sensor Log is  docs/CropCircle_Data_2_formatted.csv
+Output File is  outcsv.csv
+Plot File is  plots.shp
+<osgeo.ogr.DataSource; proxy of <Swig Object of type 'OGRDataSourceShadow *' at 0x7fc96563e6c0> >
+Opened plots.shp
+Layer has 792 features
+(409014.6054, 409118.8894, 3659514.849, 3659599.368)
+<osgeo.ogr.DataSource; proxy of <Swig Object of type 'OGRDataSourceShadow *' at 0x7fc96563e6c0> >
+Opened plots.shp
+Extent is
+[<objects.BasePoint object at 0x7fc96563fbd0>, 104.2839999999851, 84.51899999985471]
+Initiating Quadtree

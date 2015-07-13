@@ -40,24 +40,36 @@ from smartquadtree import static_elt
 
 
 def main(argv):
+    print argv
     inputfile = ''
+    gnssLog = ''
+    sensorLog = ''
+    plotFile = ''
     outputfile = ''
     try:
-        opts, args = getopt.getopt(argv,"hi:o:",["ifile=","ofile="])
+        opts, args = getopt.getopt(argv,"hi:g:s:p:o:",["inFile=","gnssLog=","sensorLog=","plotFile=","outFile="])
     except getopt.GetoptError:
-        print 'test.py -i <inputfile> -o <outputfile>'
+        print 'test.py -i <inputfile> -g <gnssLog> -s <sensorLog> -p <plotFile> -o <outputfile>'
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-            print 'test.py -i <inputfile> -o <outputfile>'
+            print 'test.py -i <inputfile> -g <gnssLog> -s <sensorLog> -p <plotFile> -o <outputfile>'
             sys.exit()
-        elif opt in ("-i", "--ifile"):
+        elif opt in ("-i", "--inFile"):
             inputfile = arg
-        elif opt in ("-o", "--ofile"):
+        elif opt in ("-o", "--outFile"):
             outputfile = arg
-    print 'Input File is "', inputfile
-    print 'Output File is "', outputfile
-    
+        elif opt in ("-p", "--plotFile"):
+            plotFile = arg
+        elif opt in ("-g", "--gnssLog"):
+            gnssLog = arg
+        elif opt in ("-s", "--sensorLog"):
+            sensorLog = arg
+    print 'Input File is ', inputfile
+    print 'GNSS Log is ', gnssLog
+    print 'Sensor Log is ', sensorLog
+    print 'Output File is ', outputfile
+    print 'Plot File is ', plotFile
     ogr.UseExceptions()
     wgs = osr.SpatialReference()
     wgs.ImportFromEPSG(4326)
@@ -77,8 +89,8 @@ def main(argv):
     #centroid = BasePoint(plotInfo['xMin'] + width/2,plotInfo['yMin'] + height/2)
     #print "Centroid = %f , %f" % (centroid.get_x(), centroid.get_y())
 
-    plots = parse.readShape("plots.shp")
-    extent = parse.getCentroidExtent("plots.shp")
+    plots = parse.readShape(plotFile)
+    extent = parse.getCentroidExtent(plotFile)
     print "Extent is"
     print extent
     #plots = plotInfo['plots']
@@ -140,15 +152,18 @@ def main(argv):
     print "%d Points inserted into Quadtree" % count
     print "%d element inside quadtree" % q.size()
       '''
-    for plot in plots:
         
         
         
     
-    parse.create_table()
-    parse.clear_table("sensor")
-    parse.setQtreeMask("plots.shp", q)
-    parse.outputPoints(outputfile)
+    #parse.create_table()
+    parse.create_gnss_table()
+    parse.create_cc_table()
+    parse.clear_table("gnss")
+    parse.clear_table("crop_circle")
+    parse.insertGNSS(gnssLog)    
+    #parse.setQtreeMask(plotFile, q)
+    #parse.outputPoints(outputfile)
 
 
     '''
