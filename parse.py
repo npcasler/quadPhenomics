@@ -35,6 +35,11 @@ try:
 except: 
     sys.exit('ERROR: could not load sqlite module')
 
+try:
+    import pyproj
+except:
+    sys.exit('ERROR: could not load pyproj module')
+
 '''
 Remove any empty rows or rows missing coordinates
 
@@ -65,6 +70,10 @@ for feat in lyr:
     #print "Feature id: %d" % feat.GetFID()
     q.insert(point)
 '''    
+
+def openConnect():
+    conn = sqlite3.connect('test.db')
+    return conn
 
 def cleanCSV(inputCSV, outputCSV):
     src = open(inputCSV, 'rb')
@@ -114,33 +123,54 @@ def readShape(shapefile):
     dataSource.Destroy()
     return shape
 
-def create_table():
-    conn = sqlite3.connect('test.db')
+def createTable():
+    conn = openConnect()
     c = conn.cursor()
     c.execute("CREATE TABLE IF NOT EXISTS sensor(id integer, x float, y float, plot_id text)")
     conn.commit()
     conn.close()
 
-def create_gnss_table():
-    conn = sqlite3.connect('test.db')
+def createGNSSTable():
+    conn = openConnect()
     c = conn.cursor()
     c.execute("CREATE TABLE IF NOT EXISTS gnss(id integer primary key autoincrement, tstamp float, long float, lat float, heading float, elev float)")
     conn.commit()
     conn.close()
 
-def create_cc_table():
-    conn = sqlite3.connect('test.db')
+def addGNSSIndex():
+    conn = openConnect()
     c = conn.cursor()
-    c.execute("CREATE TABLE IF NOT EXISTS crop_circle(id integer primary key autoincrement, sens_id text, tstamp float, c1 float, c2 float, c3 float, vi1 float, vi2 float)")
+    c.execute("CREATE INDEX gTstamp ON gnss (tstamp)")
     conn.commit()
     conn.close()
 
-def get_closest_gnss(tstamp):
-    conn = sqlite3.connect('test.db')
+def createCCTable():
+    conn = openConnect()
     c = conn.cursor()
-    p = c.execute("SELECT id, sens_id, tstamp, (SELECT TOP 1 id FROM gnss b WHERE b.tstamp < a.tstamp ORDER BY b.tstamp DESC) AS gid FROM crop_circle a")
+    c.execute("CREATE TABLE IF NOT EXISTS crop_circle(id integer primary key autoincrement, sens_id text, tstamp float, c1 float, c2 float, c3 float, vi1 float, vi2 float, gnss_id integer)")
+    conn.commit()
+    conn.close()
+
+def updateClosestGNSS():
+    conn = openConnect()
+    c = conn.cursor()
+    #c.execute("SELECT a.id, a.sens_id, a.tstamp as astamp, b.tstamp as bstamp, b.lat, b.long,  FROM crop_circle AS a, (SELECT * FROM crop_circle c ,gnss d WHERE d.tstamp < c.tstamp ORDER BY d.tstamp DESC LIMIT 1) AS b")
+    #c.execute("SELECT a.id, a.tstamp, (SELECT b.id FROM gnss b WHERE b.tstamp < a.tstamp ORDER BY b.tstamp DESC LIMIT 1) AS gid FROM crop_circle a")
+    c.execute("UPDATE crop_circle SET gnss_id = (SELECT id FROM gnss AS b WHERE b.tstamp < crop_circle.tstamp ORDER BY b.tstamp DESC LIMIT 1)")
+
+    print "Fetching records"
+    #print c.fetchone()
+    conn.commit()
+    #yield p
+    conn.close()
+
+def selectCCData():
+    conn = openConnect()
+    c = conn.cursor()
+    c.execute("SELECT a.*, b.lat, b.long, b.elev FROM crop_circle a, gnss b WHERE a.gnss_id = b.id LIMIT 10")
+    p = c.fetchall()
     print p
-    c.commit()
+    conn.commit()
     conn.close()
 
 def checkPoints(q, plot_id):
@@ -167,9 +197,9 @@ def insertPoints(pointList):
     c.executemany("INSERT INTO sensor(id,x,y,plot_id) VALUES (?, ?, ?, ?)", pointList)
     conn.commit()
     conn.close()
-
+    
 def insertGNSS(gnssLog):
-    conn = sqlite3.connect('test.db')
+    conn = openConnect()
     c = conn.cursor()
     with open(gnssLog, 'rb') as gLog:
         dr = csv.DictReader(gLog)
@@ -178,10 +208,20 @@ def insertGNSS(gnssLog):
     conn.commit()
     conn.close()
 
+def insertCC(ccLog):
+    conn = openConnect()
+    c = conn.cursor()
+    with open(ccLog, 'rb') as cLog:
+        dr = csv.DictReader(cLog)
+        to_db = [(i['sensor_ID'], i['utc_tstamp'], i['channel_1'], i['channel_2'], i['channel_3'], i['vi_1'],i['vi_2']) for i in dr]
+        c.executemany("INSERT INTO crop_circle(sens_id,tstamp,c1,c2,c3,vi1,vi2) VALUES (?, ?, ?, ?, ?, ?, ?)", to_db)
+    conn.commit()
+    conn.close()
+
 def outputPoints(outFile):
     if outFile == "" or outFile is None:
         sys.exit("ERROR: No output file specified")
-    conn = sqlite3.connect('test.db')
+    conn = openConnect()
     c = conn.cursor()
     p = c.execute("SELECT * FROM sensor")
     with open(outFile, "wb") as csv_file:
@@ -192,16 +232,16 @@ def outputPoints(outFile):
         csv_writer.writerows(c)
     
 
-def select_points():
-    conn = sqlite3.connect('test.db')
+def selectPoints():
+    conn = openConnect()
     c = conn.cursor()
     p = c.execute("SELECT * FROM sensor")
     conn.commit()
     print p
     conn.close()
 
-def clear_table(table):
-    conn = sqlite3.connect('test.db')
+def clearTable(table):
+    conn = openConnect()
     c = conn.cursor()
     
     c.execute("DELETE FROM "+  table)

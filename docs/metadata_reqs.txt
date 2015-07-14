@@ -1,0 +1,37 @@
+Kansas State Metadata
+
+For all outputs:
+Row 1
+Row 2
+Row 3
+OffetFromBar
+Ash_AM
+m
+
+For GNSS:
+Left_GPS_X
+Left_GPS_Y
+Right_GPS_X
+Right_GPS_Y
+
+For GreenSeeker:
+GS 1 X
+GS 1 Y
+GS 2 X
+GS 2 Y
+GS 3 X
+GS 3 Y
+GS 1 ID
+GS 2 ID
+GS 3 ID
+
+For CropCircle:
+CC 1 X
+CC 1 Y
+CC 2 X
+CC 2 Y
+CC 3 X
+CC 3 Y
+CC 1 ID
+CC 2 ID
+CC 3 ID

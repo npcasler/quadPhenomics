@@ -156,12 +156,19 @@ def main(argv):
         
         
     
-    #parse.create_table()
-    parse.create_gnss_table()
-    parse.create_cc_table()
-    parse.clear_table("gnss")
-    parse.clear_table("crop_circle")
-    parse.insertGNSS(gnssLog)    
+    #parse.createTable()
+    parse.createGNSSTable()
+    parse.createCCTable()
+    parse.clearTable("gnss")
+    parse.clearTable("crop_circle")
+    parse.insertGNSS(gnssLog)
+    parse.addGNSSIndex()
+    # Insert the crop circle data
+    parse.insertCC(sensorLog) 
+    # Add gnss foreign keys based on timestamp
+    parse.updateClosestGNSS()
+
+    parse.selectCCData()
     #parse.setQtreeMask(plotFile, q)
     #parse.outputPoints(outputfile)
 
