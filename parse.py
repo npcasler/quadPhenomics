@@ -36,7 +36,7 @@ except:
     sys.exit('ERROR: could not load sqlite module')
 
 try:
-    import pyproj
+    from pyproj import Proj
 except:
     sys.exit('ERROR: could not load pyproj module')
 
@@ -101,6 +101,22 @@ def projectPoint(feature):
     geom.Transform(transform)
     point = BasePoint(feature.GetFID(), geom.GetX(), geom.GetY())
     return point
+
+def projectCoords(x,y,z,proj):
+    wgs = osr.SpatialReference()
+    wgs.ImportFromEPSG(4326)
+
+    #Coordinate system to be used for the plot measurements
+    print proj
+    utm = osr.SpatialReference()
+    utm.ImportFromProj4(proj)
+
+    #transform = osr.CoordinateTransformation(wgs,utm)
+    #point = ogr.Geometry(ogr.wkbPoint)
+    #point.AddPoint(x,y,z)
+    #point.Transform(transform)
+    #return (point.GetX(),point.GetY(),point.GetZ())
+    return 1;
 
 # param shapefile: path to shapefile to open
 def readShape(shapefile):
@@ -173,6 +189,28 @@ def selectCCData():
     conn.commit()
     conn.close()
 
+def getProj(shapefile):
+    driver = ogr.GetDriverByName('ESRI Shapefile')
+    dataset = driver.Open(shapefile)
+    # get projection from layer
+    layer = dataset.GetLayer()
+    srs = layer.GetSpatialRef()
+    
+    # This will return the proj4 string for the given projection
+    prj = srs.ExportToProj4()
+    return prj;
+
+# Create custom sqlite function
+# This needs to be debugged. The syntax appears correct, but it is throwing errors
+def projGNSS(proj):
+    conn = openConnect()
+    c = conn.cursor()
+    conn.create_function("proj", 4, projectCoords)
+    c.execute("select proj(long,lat,elev,?) FROM gnss", (proj,))
+    print c.fetchone()
+    conn.commit()
+    conn.close()
+
 def checkPoints(q, plot_id):
     global pointList
      
@@ -190,14 +228,16 @@ def checkPoints(q, plot_id):
     return pointList
 
 
-
+##Add points into a sensor table 
+##Note: will need to check that this works properly
 def insertPoints(pointList):
     conn = sqlite3.connect('test.db')
     c = conn.cursor()
     c.executemany("INSERT INTO sensor(id,x,y,plot_id) VALUES (?, ?, ?, ?)", pointList)
     conn.commit()
     conn.close()
-    
+
+##Adds the data fromt he gnss log into a sqlite table
 def insertGNSS(gnssLog):
     conn = openConnect()
     c = conn.cursor()
@@ -207,7 +247,7 @@ def insertGNSS(gnssLog):
     c.executemany("INSERT INTO gnss(tstamp,lat,long,heading,elev) VALUES (?, ?, ?, ?, ?)", to_db)
     conn.commit()
     conn.close()
-
+##Adds crop circle data from the log into a sqlite table
 def insertCC(ccLog):
     conn = openConnect()
     c = conn.cursor()
@@ -218,6 +258,7 @@ def insertCC(ccLog):
     conn.commit()
     conn.close()
 
+## Writes the sensor points out to a csv
 def outputPoints(outFile):
     if outFile == "" or outFile is None:
         sys.exit("ERROR: No output file specified")
@@ -231,7 +272,7 @@ def outputPoints(outFile):
         # Write data
         csv_writer.writerows(c)
     
-
+## Prints all values in the sensor table
 def selectPoints():
     conn = openConnect()
     c = conn.cursor()
@@ -240,6 +281,7 @@ def selectPoints():
     print p
     conn.close()
 
+#clears the selected table to prevent dupllicate entries
 def clearTable(table):
     conn = openConnect()
     c = conn.cursor()
@@ -249,6 +291,7 @@ def clearTable(table):
     conn.commit()
     conn.close()
 
+# Adds the bounding box for the point intersection
 def setQtreeMask(maskShapefile, quadtree):
     driver =  ogr.GetDriverByName('ESRI Shapefile')
     dataSource = driver.Open(maskShapefile, 0)
@@ -280,7 +323,8 @@ def setQtreeMask(maskShapefile, quadtree):
 
 
 
-
+## Reads the shapefiles extent
+## Useful for setting the bounds for the quadtree
 def getExtentFromShape(shapefile):
     
     driver = ogr.GetDriverByName('ESRI Shapefile')
@@ -299,7 +343,8 @@ def getExtentFromShape(shapefile):
 
     dataSource.Destroy()
 
-
+## Quadtree requires a centroid and height/width values for instantiation
+## This function gets these values from a shapefile
 def getCentroidExtent(shapefile):
     extent = getExtentFromShape(shapefile)
     width = extent[1] - extent[0]
@@ -310,10 +355,8 @@ def getCentroidExtent(shapefile):
     centroidExtent = [centroid, width, height]
     return centroidExtent
 
-
+## Creates an array of plot features
 def createPlots(filename):
-
-
     yMin = 3.40282e+38
     yMax = 1.17549e-38
     xMin = 3.40282e+38
@@ -353,7 +396,8 @@ def createPlots(filename):
         plotInfo = {'plots': plots, 'xMin': xMin, 'yMin': yMin, 'xMax': xMax, 'yMax': yMax}
     return plotInfo
 
-
+## Converts iso-8601 formatted timestamps to Unix epoch timestamps(integer)
+## Need time in an decimal format for time-stamp matching
 def iso8601_to_epoch(datestring):
     """ 
     This function copied from https://gist.github.com/squioc/3078803
@@ -365,7 +409,7 @@ def iso8601_to_epoch(datestring):
     return calendar.timegm(datetime.strptime(datestring, "%Y-%m-%dT%H:%M:%S.%f").timetuple())
 
 
-
+## Create a plot shapefile
 def writePlotShapefile(plots):
     #set up the shapefile driver
     driver = ogr.GetDriverByName("ESRI Shapefile")

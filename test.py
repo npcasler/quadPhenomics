@@ -169,6 +169,11 @@ def main(argv):
     parse.updateClosestGNSS()
 
     parse.selectCCData()
+    srs = parse.getProj(plotFile)
+    print srs
+    test = parse.projectCoords(-96.6191598,39.1328326,110,srs)
+    print test
+    parse.projGNSS(srs)
     #parse.setQtreeMask(plotFile, q)
     #parse.outputPoints(outputfile)
 

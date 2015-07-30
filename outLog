@@ -1,16 +1,22 @@
-Tue Jul 14 17:48:39 CDT 2015
+Thu Jul 30 09:26:53 CDT 2015
 ['-i', 'docs/f119_2012_doy201_1pm_cc.csv', '-p', 'data/plots.shp', '-g', 'docs/GNSS_Data_2_formatted.csv', '-s', 'docs/CropCircle_Data_2_formatted.csv', '-o', 'outcsv.csv']
 Input File is  docs/f119_2012_doy201_1pm_cc.csv
 GNSS Log is  docs/GNSS_Data_2_formatted.csv
 Sensor Log is  docs/CropCircle_Data_2_formatted.csv
 Output File is  outcsv.csv
 Plot File is  data/plots.shp
-<osgeo.ogr.DataSource; proxy of <Swig Object of type 'OGRDataSourceShadow *' at 0x7f2314db3750> >
+<osgeo.ogr.DataSource; proxy of <Swig Object of type 'OGRDataSourceShadow *' at 0x7feefeb4b030> >
 Opened data/plots.shp
 Layer has 792 features
 (409014.6054, 409118.8894, 3659514.849, 3659599.368)
-<osgeo.ogr.DataSource; proxy of <Swig Object of type 'OGRDataSourceShadow *' at 0x7f2314db3750> >
+<osgeo.ogr.DataSource; proxy of <Swig Object of type 'OGRDataSourceShadow *' at 0x7feefeb4b090> >
 Opened data/plots.shp
 Extent is
-[<objects.BasePoint object at 0x7f2314db5c10>, 104.2839999999851, 84.51899999985471]
+[<objects.BasePoint object at 0x7feefeb43850>, 104.2839999999851, 84.51899999985471]
 Initiating Quadtree
+Fetching records
+[(1, u'CCL_AC000304', 1438937017.8, 0.04, 0.3326, 0.0727, 0.785, 3.578, 183, 39.1328327, -96.6191598, 312.29), (2, u'CCL_AC000259', 1438937017.8, 0.0429, 0.2338, 0.0688, 0.69, 0.545, 183, 39.1328327, -96.6191598, 312.29), (3, u'CCL_AC000304', 1438937017.8, 0.0398, 0.3475, 0.0667, 0.794, 4.207, 183, 39.1328327, -96.6191598, 312.29), (4, u'CCL_AC000259', 1438937018.0, 0.0441, 0.2351, 0.0652, 0.684, 0.566, 184, 39.1328327, -96.6191598, 312.29), (5, u'CCL_AC000304', 1438937018.0, 0.0394, 0.3418, 0.0698, 0.793, 3.898, 184, 39.1328327, -96.6191598, 312.29), (6, u'CCL_AC000259', 1438937018.0, 0.0448, 0.2334, 0.0683, 0.678, 0.547, 184, 39.1328327, -96.6191598, 312.29), (7, u'CCL_AC000304', 1438937018.0, 0.0401, 0.3395, 0.0724, 0.789, 3.689, 184, 39.1328327, -96.6191598, 312.29), (8, u'CCL_AC000259', 1438937018.2, 0.0442, 0.2317, 0.07, 0.679, 0.536, 185, 39.1328327, -96.6191598, 312.29), (9, u'CCL_AC000304', 1438937018.2, 0.0401, 0.3363, 0.0679, 0.787, 3.952, 185, 39.1328327, -96.6191598, 312.29), (10, u'CCL_AC000259', 1438937018.2, 0.0445, 0.2328, 0.0724, 0.679, 0.525, 185, 39.1328327, -96.6191598, 312.29)]
++proj=utm +zone=12 +datum=WGS84 +units=m +no_defs 
++proj=utm +zone=12 +datum=WGS84 +units=m +no_defs 
+1
++proj=utm +zone=12 +datum=WGS84 +units=m +no_defs 
